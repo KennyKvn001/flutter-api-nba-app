@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 class HomePage extends StatelessWidget {
   HomePage({super.key});
 
-  List<Team> teams = [];
+  final List<Team> teams = [];
 
   // get teams
   Future getTeams() async {
@@ -71,8 +71,7 @@ class HomePage extends StatelessWidget {
                       ),
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundColor:
-                              const Color.fromARGB(255, 60, 93, 163),
+                          backgroundColor: Colors.red[800],
                           child: Text(
                             teams[index].abbreviation,
                             style: const TextStyle(

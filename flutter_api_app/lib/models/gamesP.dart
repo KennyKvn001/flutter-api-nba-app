@@ -9,7 +9,7 @@ import 'package:http/http.dart' as http;
 class GamesPage extends StatelessWidget {
   GamesPage({super.key});
 
-  List<Game> games = [];
+  final List<Game> games = [];
 
   Future getGame() async {
     try {
