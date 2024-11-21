@@ -1,47 +1,22 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_api_app/models/team.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter_api_app/team_provider.dart';
+import 'package:provider/provider.dart';
 
-class HomePage extends StatelessWidget {
-  HomePage({super.key});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
-  final List<Team> teams = [];
+  @override
+  _HomePageState createState() => _HomePageState();
+}
 
-  // get teams
-  Future getTeams() async {
-    try {
-      // API key from .env
-      final apiKey = dotenv.env['API_KEY'] ?? '';
-
-      // Api calling
-      var response = await http.get(
-        Uri.https('api.balldontlie.io', '/v1/teams/'),
-        headers: {
-          'Authorization': apiKey,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        var jsonData = jsonDecode(response.body);
-
-        // Creating Team object
-        for (var eachTeam in jsonData['data']) {
-          final team = Team(
-            abbreviation: eachTeam['abbreviation'],
-            full_name: eachTeam['full_name'],
-          );
-          teams.add(team);
-        }
-
-        print(teams.length);
-      } else {
-        print('Error: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error fetching teams: $e');
-    }
+class _HomePageState extends State<HomePage> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch teams when the page loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TeamProvider>().fetchTeams();
+    });
   }
 
   @override
@@ -55,45 +30,58 @@ class HomePage extends StatelessWidget {
         ),
         backgroundColor: const Color.fromARGB(255, 60, 93, 163),
       ),
-      body: FutureBuilder(
-          future: getTeams(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done) {
-              return ListView.builder(
-                itemCount: teams.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.red[800],
-                          child: Text(
-                            teams[index].abbreviation,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+      body: Consumer<TeamProvider>(
+        builder: (context, teamProvider, child) {
+          // Check loading state
+          if (teamProvider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          // Check for errors
+          if (teamProvider.error.isNotEmpty) {
+            return Center(
+              child: Text(
+                'Error: ${teamProvider.error}',
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
+          }
+
+          // Build list of teams
+          return ListView.builder(
+            itemCount: teamProvider.teams.length,
+            itemBuilder: (context, index) {
+              final team = teamProvider.teams[index];
+              return Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.red[800],
+                      child: Text(
+                        team.abbreviation,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
                         ),
-                        title: Text(
-                          teams[index].full_name,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(teams[index].abbreviation),
                       ),
                     ),
-                  );
-                },
+                    title: Text(
+                      team.full_name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(team.abbreviation),
+                  ),
+                ),
               );
-            } else {
-              return const Center(child: CircularProgressIndicator());
-            }
-          }),
+            },
+          );
+        },
+      ),
     );
   }
 }

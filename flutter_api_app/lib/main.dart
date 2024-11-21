@@ -1,13 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_api_app/games_page.dart';
 import 'package:flutter_api_app/players_page.dart';
+import 'package:flutter_api_app/players_provider.dart';
+import 'package:flutter_api_app/team_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
+
 import 'home_page.dart';
 
 void main() async {
   await dotenv.load();
 
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => TeamProvider()),
+        ChangeNotifierProvider(create: (context) => PlayersProvider()),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
